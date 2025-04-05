@@ -1,0 +1,29 @@
+{
+  "name": "entry-push",
+  "version": "0.0.3",
+  "author": "aqu3180",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idiotf/Entry_FHD.git"
+  },
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@types/chrome": "^0.0.313",
+    "node-html-parser": "^7.0.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/idiotf/Entry_FHD/issues"
+  },
+  "description": "엔트리 상의 알림을 푸시 알림으로 보내줍니다.",
+  "homepage": "https://github.com/idiotf/Entry_FHD#readme",
+  "license": "ISC",
+  "scripts": {
+    "watch": "webpack --watch",
+    "build": "webpack"
+  },
+  "type": "commonjs"
+}
