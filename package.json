@@ -4,7 +4,7 @@
   "author": "aqu3180",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/idiotf/Entry_FHD.git"
+    "url": "git+https://github.com/idiotf/Entry_Push.git"
   },
   "main": "dist/index.js",
   "devDependencies": {
@@ -16,10 +16,10 @@
     "webpack-cli": "^6.0.1"
   },
   "bugs": {
-    "url": "https://github.com/idiotf/Entry_FHD/issues"
+    "url": "https://github.com/idiotf/Entry_Push/issues"
   },
   "description": "엔트리 상의 알림을 푸시 알림으로 보내줍니다.",
-  "homepage": "https://github.com/idiotf/Entry_FHD#readme",
+  "homepage": "https://github.com/idiotf/Entry_Push#readme",
   "license": "ISC",
   "scripts": {
     "watch": "webpack --watch",
