@@ -19,7 +19,10 @@ async function request(queryName: string, query: string, variables: object) {
   }).then(v => v.json())
 }
 
-const nextData = fetch('https://playentry.org').then(v => v.text()).then(v => {
+const entryURL = 'https://playentry.org'
+const spaceEntryURL = 'https://space.playentry.org'
+
+const nextData = fetch(entryURL).then(v => v.text()).then(v => {
   const data = parse(v).getElementById('__NEXT_DATA__')?.textContent
   if (!data) throw new TypeError('Cannot get __NEXT_DATA__')
   return JSON.parse(data)
@@ -61,10 +64,11 @@ chrome.alarms.onAlarm.addListener(async alarm => {
   for (const topic of topics) if (!topic.isRead && !createdTopics.hasOwnProperty(topic.id)) {
     createdTopics[topic.id] = topic
     chrome.notifications.create(topic.id, {
-      type: 'basic',
+      type: topic.thumbUrl ? 'image' : 'basic',
       iconUrl: 'https://playentry.org/android-chrome-512x512.png',
       title: (await nextData).props.pageProps._nextI18Next.initialI18nStore.ko.alarm[`topic_badge_${topic.category}`],
       message: (await nextData).props.pageProps._nextI18Next.initialI18nStore.ko.alarm[topic.template].replace(/%\d+/g, (str: string) => topic.params[str.substring(1)]),
+      imageUrl: topic.thumbUrl ? new URL(topic.thumbUrl, entryURL).toString() : void 0,
     })
   }
 })
@@ -93,8 +97,6 @@ interface Alarm {
   }
 }
 
-const entryURL = 'https://playentry.org'
-const spaceEntryURL = 'https://space.playentry.org'
 const commonAlarmURL = {
   project:    new URL('/project', entryURL),
   user:       new URL('/profile', entryURL),
