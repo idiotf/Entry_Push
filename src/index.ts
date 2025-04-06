@@ -24,7 +24,7 @@ const nextData = fetch('https://playentry.org').then(v => v.text()).then(v => {
   if (!data) throw new TypeError('Cannot get __NEXT_DATA__')
   return JSON.parse(data)
 })
-const createdTopics = new Set
+const createdTopics: Record<string, any> = {}
 chrome.alarms.onAlarm.addListener(async alarm => {
   if (alarm.name != 'select-entry-topics') return
 
@@ -58,8 +58,8 @@ chrome.alarms.onAlarm.addListener(async alarm => {
   `, { pageParams: { display: 50 } }).then(v => v.data?.topicList?.list)
   if (!topics) return
 
-  for (const topic of topics) if (!topic.isRead && !createdTopics.has(topic.id)) {
-    createdTopics.add(topic.id)
+  for (const topic of topics) if (!topic.isRead && !createdTopics.hasOwnProperty(topic.id)) {
+    createdTopics[topic.id] = topic
     chrome.notifications.create(topic.id, {
       type: 'basic',
       iconUrl: 'https://playentry.org/android-chrome-512x512.png',
@@ -68,3 +68,70 @@ chrome.alarms.onAlarm.addListener(async alarm => {
     })
   }
 })
+
+chrome.notifications.onClicked.addListener(async id => {
+  const alarm = createdTopics[id]
+  if (!alarm) return
+  await request('READ_TOPICS', `
+    mutation READ_TOPIC($id: ID!) {
+      readTopic(id: $id) {  
+        status
+        result
+      }
+    }
+  `, { id })
+  chrome.tabs.create({ url: createAlarmLink(alarm) })
+})
+
+interface Alarm {
+  link: {
+    category: keyof typeof commonAlarmURL | 'etc'
+    target: string
+    hash: string
+    groupId: string
+  }
+}
+
+const entryURL = 'https://playentry.org'
+const spaceEntryURL = 'https://space.playentry.org'
+const commonAlarmURL = {
+  project:    new URL('/project', entryURL),
+  user:       new URL('/profile', entryURL),
+  lecture:    new URL('/study/lecture', entryURL),
+  curriculum: new URL('/study/curriculum', entryURL),
+  suggestion: new URL('/suggestion', entryURL),
+  qna:        new URL('/community/qna', entryURL),
+  notice:     new URL('/community/notice', entryURL),
+  tips:       new URL('/community/tips', entryURL),
+  free:       new URL('/community/entrystory', entryURL),
+  staff:      new URL('/project', entryURL),
+  reflect:    new URL('/reflect', entryURL),
+  discovery:  new URL('/discovery', entryURL),
+
+  space_explore: new URL('/explore', spaceEntryURL),
+  space_world:   new URL('/world', spaceEntryURL),
+}
+
+const groupAlarmURL = {
+  project:    new URL('/group/project', entryURL),
+  lecture:    new URL('/group/study/lecture', entryURL),
+  curriculum: new URL('/group/study/curriculum', entryURL),
+  discuss:    new URL('/group/community', entryURL),
+  homework:   new URL('/group/homework', entryURL),
+}
+
+function createAlarmLink(alarm: Alarm) {
+  const { link: { category, target, hash, groupId } } = alarm
+  const hashURL = hash ? `#${hash}` : ''
+
+  if ('etc' == category && target) return target + hashURL
+
+  if (groupId) {
+    const groupCategory = category == groupId ? 'discuss' : category
+    if (groupCategory in groupAlarmURL) return `${groupAlarmURL[groupCategory as keyof typeof groupAlarmURL]}/${target}/${groupId}${hashURL}`
+  }
+
+  if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target}${hashURL}`
+
+  throw new TypeError('Cannot get alarm link')
+}
