@@ -80,7 +80,8 @@ chrome.notifications.onClicked.addListener(async id => {
       }
     }
   `, { id })
-  chrome.tabs.create({ url: createAlarmLink(alarm) })
+  const url = createAlarmLink(alarm)
+  if (url) chrome.tabs.create({ url })
 })
 
 interface Alarm {
@@ -132,6 +133,4 @@ function createAlarmLink(alarm: Alarm) {
   }
 
   if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target}${hashURL}`
-
-  throw new TypeError('Cannot get alarm link')
 }
