@@ -22,11 +22,18 @@ async function request(queryName: string, query: string, variables: object) {
 const entryURL = 'https://playentry.org'
 const spaceEntryURL = 'https://space.playentry.org'
 
-const nextData = fetch(entryURL).then(v => v.text()).then(v => {
-  const data = parse(v).getElementById('__NEXT_DATA__')?.textContent
-  if (!data) throw new TypeError('Cannot get __NEXT_DATA__')
-  return JSON.parse(data)
-})
+const nextData = (async function getNextData() {
+  try {
+    const res = await fetch(entryURL)
+    const text = await res.text()
+    const data = parse(text).getElementById('__NEXT_DATA__')?.textContent
+    if (!data) throw new TypeError('Cannot get __NEXT_DATA__')
+    return JSON.parse(data)
+  } catch {
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    return getNextData()
+  }
+})()
 const createdTopics: Record<string, any> = {}
 chrome.alarms.onAlarm.addListener(async alarm => {
   if (alarm.name != 'select-entry-topics') return
@@ -63,11 +70,12 @@ chrome.alarms.onAlarm.addListener(async alarm => {
 
   for (const topic of topics) if (!topic.isRead && !createdTopics.hasOwnProperty(topic.id)) {
     createdTopics[topic.id] = topic
+    const alarmData = (await nextData).props.pageProps._nextI18Next.initialI18nStore.ko.alarm
     chrome.notifications.create(topic.id, {
       type: topic.thumbUrl ? 'image' : 'basic',
       iconUrl: 'https://playentry.org/android-chrome-512x512.png',
-      title: (await nextData).props.pageProps._nextI18Next.initialI18nStore.ko.alarm[`topic_badge_${topic.category}`],
-      message: (await nextData).props.pageProps._nextI18Next.initialI18nStore.ko.alarm[topic.template].replace(/%\d+/g, (str: string) => topic.params[str.substring(1)]),
+      title: alarmData[`topic_badge_${topic.category}`],
+      message: (alarmData[topic.template] || topic.template).replace(/%\d+/g, (str: string) => topic.params[str.substring(1)]),
       imageUrl: topic.thumbUrl ? new URL(topic.thumbUrl, entryURL).toString() : void 0,
     })
   }
@@ -134,5 +142,5 @@ function createAlarmLink(alarm: Alarm) {
     if (groupCategory in groupAlarmURL) return `${groupAlarmURL[groupCategory as keyof typeof groupAlarmURL]}/${target}/${groupId}${hashURL}`
   }
 
-  if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target}${hashURL}`
+  if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target || ''}${hashURL}`
 }
