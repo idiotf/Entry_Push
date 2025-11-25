@@ -1,5 +1,3 @@
-import * as z from './type-check'
-
 import {
   selectTopics,
   readTopic,
@@ -8,6 +6,8 @@ import {
   spaceEntryURL,
 } from './entry'
 
+import { type Alarm, alarmSchema, getTopic, removeTopic, setTopic } from './topic-storage'
+
 const alarmName = 'select-entry-topics'
 
 await chrome.alarms.clear(alarmName)
@@ -15,25 +15,6 @@ await chrome.alarms.create(alarmName, {
   periodInMinutes: 1.5 / 60,
 })
 
-const alarmSchema = z.object({
-  id: z.string(),
-  params: z.array(z.string()),
-  template: z.string(),
-  thumbUrl: z.nullable(z.string()),
-  category: z.string(),
-  isRead: z.boolean(),
-  created: z.string(),
-  link: z.object({
-    category: z.string(),
-    target: z.string(),
-    hash: z.nullable(z.string()),
-    groupId: z.nullable(z.string()),
-  }),
-})
-
-type Alarm = z.infer<typeof alarmSchema>
-
-const createdTopics = new Map<string, Alarm>()
 const iconUrl = new URL('/android-chrome-512x512.png', entryURL) + ''
 
 chrome.alarms.onAlarm.addListener(async alarm => {
@@ -42,8 +23,8 @@ chrome.alarms.onAlarm.addListener(async alarm => {
   const topics = await selectTopics()
   for (const rawTopic of topics) try {
     const topic = alarmSchema.parse(rawTopic)
-    if (topic.isRead || createdTopics.has(topic.id)) continue
-    createdTopics.set(topic.id, topic)
+    if (topic.isRead || getTopic(topic.id)) continue
+    setTopic(topic.id, topic)
 
     const titleTemplate = `topic_badge_${topic.category}`
     const options: chrome.notifications.NotificationCreateOptions = {
@@ -55,15 +36,13 @@ chrome.alarms.onAlarm.addListener(async alarm => {
       imageUrl: topic.thumbUrl ? new URL(topic.thumbUrl, entryURL) + '' : undefined,
     }
 
-    try {
-      await chrome.notifications.create(topic.id, options)
-    } catch {
+    chrome.notifications.create(topic.id, options).catch(() => {
       delete options.imageUrl
       options.type = 'basic'
-      await chrome.notifications.create(topic.id, options)
-    }
+      return chrome.notifications.create(topic.id, options)
+    })
   } catch (e) {
-    reportError(e)
+    console.error(e)
   }
 })
 
@@ -71,10 +50,11 @@ const createAlarmMessage = (template: string, params: string[]) =>
   template.replace(/%\d+/g, (str: string) => params[+str.substring(1)]!)
 
 chrome.notifications.onClicked.addListener(async id => {
-  const alarm = createdTopics.get(id)
+  const alarm = getTopic(id)
   if (!alarm) return
 
   await readTopic(id)
+  removeTopic(id)
 
   const url = createAlarmLink(alarm)
   if (url) chrome.tabs.create({ url })

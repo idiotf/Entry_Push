@@ -31,15 +31,19 @@ const propsSchema = z.object({
 })
 
 const graphqlURL = new URL('/graphql', entryURL)
-const propsRegex = /"props":(.*?),"page":/
+const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/
 
 const getServerSideProps = tryAgain(async () => {
   const res = await fetch(entryURL)
   const html = await res.text()
 
-  const match = propsRegex.exec(html)!
-  const propsObj = JSON.parse(match[1]!)
-  return propsSchema.parse(propsObj)
+  const match = nextDataRegex.exec(html)
+  if (!match?.[1]) {
+    throw new Error('Could not find __NEXT_DATA__ script tag in HTML.')
+  }
+  
+  const nextData = JSON.parse(match[1])
+  return propsSchema.parse(nextData.props)
 })
 
 let props = await getServerSideProps()
