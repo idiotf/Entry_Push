@@ -9,12 +9,6 @@ import {
 import { type Alarm, alarmSchema, getTopic, removeTopic, setTopic } from './topic-storage'
 
 const alarmName = 'select-entry-topics'
-
-await chrome.alarms.clear(alarmName)
-await chrome.alarms.create(alarmName, {
-  periodInMinutes: 1.5 / 60,
-})
-
 const iconUrl = new URL('/android-chrome-512x512.png', entryURL) + ''
 
 chrome.alarms.onAlarm.addListener(async alarm => {
@@ -99,3 +93,8 @@ function createAlarmLink(alarm: Alarm) {
 
   if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target || ''}${hashURL}`
 }
+
+await chrome.alarms.clear(alarmName)
+await chrome.alarms.create(alarmName, {
+  periodInMinutes: 1.5 / 60,
+})
