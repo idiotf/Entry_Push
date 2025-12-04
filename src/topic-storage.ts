@@ -10,7 +10,7 @@ export const alarmSchema = z.object({
   created: z.string(),
   link: z.object({
     category: z.string(),
-    target: z.string(),
+    target: z.nullable(z.string()),
     hash: z.nullable(z.string()),
     groupId: z.nullable(z.string()),
   }),
