@@ -23,6 +23,7 @@ interface ChromeStorage {
 }
 
 const { createdTopics } = await chrome.storage.local.get<ChromeStorage>({ createdTopics: {} })
+const cachedTopics: Record<string, Alarm> = {}
 
 let update = false
 function queueUpdate() {
@@ -35,7 +36,7 @@ function queueUpdate() {
 }
 
 export function getTopic(id: string) {
-  return createdTopics[id]
+  return createdTopics[id] || cachedTopics[id]
 }
 
 export function hasTopic(id: string) {
@@ -48,6 +49,8 @@ export function setTopic(id: string, alarm: Alarm) {
 }
 
 export function removeTopic(id: string) {
+  const topic = createdTopics[id]
+  if (topic) cachedTopics[id] = topic
   delete createdTopics[id]
   queueUpdate()
 }
