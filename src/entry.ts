@@ -86,9 +86,9 @@ const selectTopicsSchema = z.object({
   }),
 })
 
-export const selectTopics = tryAgain(async () => {
+export const selectTopics = async () => {
   const json = await request(SELECT_TOPICS, { pageParams: { display: 50 } })
   return selectTopicsSchema.parse(json).data.topicList.list
-})
+}
 
 export const readTopic = tryAgain(async (id: string) => request(READ_TOPIC, { id }))
