@@ -11,10 +11,14 @@ import { type Alarm, alarmSchema, getTopic, removeTopic, setTopic } from './topi
 const alarmName = 'select-entry-topics'
 const iconUrl = new URL('/android-chrome-512x512.png', entryURL) + ''
 
+let waitingResponse = false
 chrome.alarms.onAlarm.addListener(async alarm => {
-  if (alarm.name != alarmName) return
+  if (waitingResponse || alarm.name != alarmName) return
 
+  waitingResponse = true
   const topics = await selectTopics()
+  waitingResponse = false
+
   for (const rawTopic of topics) try {
     const topic = alarmSchema.parse(rawTopic)
     if (topic.isRead || getTopic(topic.id)) continue
