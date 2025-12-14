@@ -34,14 +34,14 @@ const graphqlURL = new URL('/graphql', entryURL)
 const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/
 
 const getServerSideProps = tryAgain(async () => {
+  if (!navigator.onLine) throw Error('Internet connection has been disconnected.')
+
   const res = await fetch(entryURL)
   const html = await res.text()
 
   const match = nextDataRegex.exec(html)
-  if (!match?.[1]) {
-    throw new Error('Could not find __NEXT_DATA__ script tag in HTML.')
-  }
-  
+  if (!match?.[1]) throw Error('Could not find __NEXT_DATA__ script tag in HTML.')
+
   const nextData = JSON.parse(match[1])
   return propsSchema.parse(nextData.props)
 })
@@ -75,20 +75,20 @@ export async function request(query: string, variables?: unknown, init?: Request
   return res.json()
 }
 
-const SELECT_TOPICS = 'query SELECT_TOPICS($pageParam:PageParam,$searchAfter:JSON){topicList(pageParam:$pageParam,searchAfter:$searchAfter){searchAfter,list{id,params,template,thumbUrl,category,isRead,created,link{category,target,hash,groupId}}}}'
-const READ_TOPIC    = 'mutation READ_TOPIC($id:ID!){readTopic(id:$id){status,result}}'
+const SELECT_TOPICS = 'query($pageParam:PageParam,$searchAfter:JSON){topicList(pageParam:$pageParam,searchAfter:$searchAfter){searchAfter,list{id,params,template,thumbUrl,category,isRead,created,link{category,target,hash,groupId}}}}'
+const READ_TOPIC    = 'mutation($id:ID!){readTopic(id:$id){status,result}}'
 
 const selectTopicsSchema = z.object({
   data: z.object({
-    topicList: z.object({
+    topicList: z.nullable(z.object({
       list: z.array(z.unknown()),
-    }),
+    })),
   }),
 })
 
 export const selectTopics = async () => {
   const json = await request(SELECT_TOPICS, { pageParams: { display: 50 } })
-  return selectTopicsSchema.parse(json).data.topicList.list
+  return selectTopicsSchema.parse(json).data.topicList?.list || null
 }
 
 export const readTopic = tryAgain(async (id: string) => request(READ_TOPIC, { id }))

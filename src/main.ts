@@ -13,10 +13,11 @@ const iconUrl = new URL('/android-chrome-512x512.png', entryURL) + ''
 
 let waitingResponse = false
 chrome.alarms.onAlarm.addListener(async alarm => {
-  if (waitingResponse || alarm.name != alarmName) return
+  if (waitingResponse || !navigator.onLine || alarm.name != alarmName) return
 
   waitingResponse = true
   const topics = await selectTopics().finally(() => waitingResponse = false)
+  if (!topics) return
 
   for (const rawTopic of topics) try {
     const topic = alarmSchema.parse(rawTopic)
