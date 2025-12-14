@@ -16,8 +16,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
   if (waitingResponse || alarm.name != alarmName) return
 
   waitingResponse = true
-  const topics = await selectTopics()
-  waitingResponse = false
+  const topics = await selectTopics().finally(() => waitingResponse = false)
 
   for (const rawTopic of topics) try {
     const topic = alarmSchema.parse(rawTopic)
