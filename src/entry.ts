@@ -34,9 +34,9 @@ const graphqlURL = new URL('/graphql', entryURL)
 const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/
 
 const getServerSideProps = tryAgain(async () => {
-  if (!navigator.onLine) throw Error('Internet connection has been disconnected.')
+  if (!navigator.onLine) throw Error('The internet connection has been lost.')
 
-  const res = await fetch(entryURL)
+  const res = await fetch(entryURL, { signal: AbortSignal.timeout(10_000) })
   const html = await res.text()
 
   const match = nextDataRegex.exec(html)
@@ -71,6 +71,7 @@ export async function request(query: string, variables?: unknown, init?: Request
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(10_000),
   })
   return res.json()
 }
