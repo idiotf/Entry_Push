@@ -92,10 +92,10 @@ function createAlarmLink(alarm: Alarm) {
 
   if (groupId) {
     const groupCategory = category == groupId ? 'discuss' : category
-    if (groupCategory in groupAlarmURL) return `${groupAlarmURL[groupCategory as keyof typeof groupAlarmURL]}/${target}/${groupId}${hashURL}`
+    if (groupCategory && groupCategory in groupAlarmURL) return `${groupAlarmURL[groupCategory as keyof typeof groupAlarmURL]}/${target}/${groupId}${hashURL}`
   }
 
-  if (category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target || ''}${hashURL}`
+  if (category && category in commonAlarmURL) return `${commonAlarmURL[category as keyof typeof commonAlarmURL]}/${target || ''}${hashURL}`
 }
 
 await chrome.alarms.clear(alarmName)
