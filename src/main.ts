@@ -35,7 +35,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
     }
 
     chrome.notifications.create(topic.id, options).catch(() => {
-      delete options.imageUrl
+      options.imageUrl = undefined
       options.type = 'basic'
       return chrome.notifications.create(topic.id, options)
     })

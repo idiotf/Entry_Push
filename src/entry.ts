@@ -5,6 +5,9 @@ import { host_permissions } from '../build/manifest.json'
 export const entryURL = host_permissions[0]!
 export const spaceEntryURL = 'https://space.playentry.org'
 
+const propsReloadDelay = 3 * 60 * 1000
+const timeoutDelay = 10000
+
 const propsSchema = z.object({
   initialProps: z.object({
     csrfToken: z.string(),
@@ -36,7 +39,7 @@ const nextDataRegex = /<script id="__NEXT_DATA__" type="application\/json">(.*?)
 const getServerSideProps = tryAgain(async () => {
   if (!navigator.onLine) throw Error('The internet connection has been lost.')
 
-  const res = await fetch(entryURL, { signal: AbortSignal.timeout(10_000) })
+  const res = await fetch(entryURL, { signal: AbortSignal.timeout(timeoutDelay) })
   const html = await res.text()
 
   const match = nextDataRegex.exec(html)
@@ -49,12 +52,11 @@ const getServerSideProps = tryAgain(async () => {
 let props = await getServerSideProps()
 export let alarmTemplates = props.pageProps._nextI18Next.initialI18nStore.ko.alarm
 
-const PROPS_RELOAD_DELAY = 10_000
 setTimeout(async function step() {
   props = await getServerSideProps()
   alarmTemplates = props.pageProps._nextI18Next.initialI18nStore.ko.alarm
-  setTimeout(step, PROPS_RELOAD_DELAY)
-}, PROPS_RELOAD_DELAY)
+  setTimeout(step, propsReloadDelay)
+}, propsReloadDelay)
 
 export async function request(query: string, variables?: unknown, init?: RequestInit): Promise<unknown> {
   const csrfToken = props.initialProps.csrfToken
@@ -71,12 +73,12 @@ export async function request(query: string, variables?: unknown, init?: Request
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(timeoutDelay),
   })
   return res.json()
 }
 
-const SELECT_TOPICS = 'query($pageParam:PageParam,$searchAfter:JSON){topicList(pageParam:$pageParam,searchAfter:$searchAfter){searchAfter,list{id,params,template,thumbUrl,category,isRead,created,link{category,target,hash,groupId}}}}'
+const SELECT_TOPICS = 'query($pageParam:PageParam){topicList(pageParam:$pageParam){list{id params template thumbUrl category isRead created link{category target hash groupId}}}}'
 const READ_TOPIC    = 'mutation($id:ID!){readTopic(id:$id){status,result}}'
 
 const selectTopicsSchema = z.object({
@@ -88,7 +90,7 @@ const selectTopicsSchema = z.object({
 })
 
 export const selectTopics = async () => {
-  const json = await request(SELECT_TOPICS, { pageParams: { display: 50 } })
+  const json = await request(SELECT_TOPICS, { pageParam: { display: 50 } })
   return selectTopicsSchema.parse(json).data.topicList?.list || null
 }
 

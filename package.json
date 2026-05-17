@@ -14,8 +14,8 @@
   },
   "private": true,
   "scripts": {
-    "watch": "bun build --watch --sourcemap=inline --no-clear-screen --minify --outfile=build/dist/index.js src/index.ts",
-    "build": "bun build --minify --outfile=build/dist/index.js src/index.ts"
+    "watch": "bun build src/index.ts --watch --sourcemap=inline --outfile=build/dist/index.js",
+    "build": "bun build src/index.ts --production --minify --outfile=build/dist/index.js"
   },
   "type": "module"
 }

@@ -1,7 +1,7 @@
 {
   "name": "Entry Push",
   "description": "엔트리 상의 알림을 푸시 알림으로 보내줍니다.",
-  "version": "0.1",
+  "version": "0.1.1",
   "manifest_version": 3,
   "icons": {
     "16": "icons/16.png",

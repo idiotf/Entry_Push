@@ -50,7 +50,9 @@ export function setTopic(id: string, alarm: Alarm) {
 
 export function removeTopic(id: string) {
   const topic = createdTopics[id]
-  if (topic) cachedTopics[id] = topic
+  if (!topic) return
+
+  cachedTopics[id] = topic
   delete createdTopics[id]
   queueUpdate()
 }
